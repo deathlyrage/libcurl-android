@@ -55,3 +55,4 @@ dkms.conf
 obj/
 libs/
 jni/build/
+/.build_for_android.sh.swp

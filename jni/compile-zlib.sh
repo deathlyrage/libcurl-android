@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-APP_ABI=(armeabi-v7a x86 arm64-v8a)
+APP_ABI=(armeabi-v7a x86 x86_64 arm64-v8a)
 
 BASE_PATH=$(
 	cd "$(dirname $0)"
@@ -39,6 +39,8 @@ safeMakeDir() {
 
 ## Android NDK
 export NDK_ROOT="$NDK_ROOT"
+export ANDROID_NDK_HOME="$NDK_ROOT"
+export PATH=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin:$ANDROID_NDK_HOME/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64/bin:$PATH
 
 if [ -z "$NDK_ROOT" ]; then
 	echo "Please set your NDK_ROOT environment variable first"
@@ -69,24 +71,30 @@ compile() {
 	TOOLCHAIN=$3
 	TARGET=$4
 	CFLAGS=$5
+	
 	# https://android.googlesource.com/platform/ndk/+/ics-mr0/docs/STANDALONE-TOOLCHAIN.html
 	export CFLAGS="-I$SYSROOT/usr/include --sysroot=$SYSROOT $CFLAGS"
+	
 	# zlib configure
 	export CROSS_PREFIX="$TOOLCHAIN/$TARGET-"
+	
 	# config
 	safeMakeDir $BUILD_PATH/zlib/$ABI
 	compatibleWithAndroid
 	./configure --prefix=$BUILD_PATH/zlib/$ABI
 	checkExitCode $?
+	
 	# clean
 	make clean
 	checkExitCode $?
+	
 	# make
 	make -j4
 	checkExitCode $?
+	
 	# install
-	make install
-	checkExitCode $?
+	#make install
+	#checkExitCode $?
 	cd $BASE_PATH
 }
 
@@ -102,16 +110,16 @@ fi
 for abi in ${APP_ABI[*]}; do
 	case $abi in
 	armeabi-v7a)
-		# https://gcc.gnu.org/onlinedocs/gcc/ARM-Options.html#ARM-Options
-		compile $abi "$NDK_ROOT/platforms/android-12/arch-arm" "$NDK_ROOT/toolchains/arm-linux-androideabi-4.9/prebuilt/$host-x86_64/bin" "arm-linux-androideabi" "-march=armv7-a -mfloat-abi=softfp -mfpu=neon"
+		compile $abi "$NDK_ROOT/platforms/android-23/arch-arm" "$NDK_ROOT/toolchains/arm-linux-androideabi-4.9/prebuilt/$host-x86_64/bin" "arm-linux-androideabi" "-march=armv7-a -mfloat-abi=softfp -mfpu=neon"
 		;;
 	x86)
-		# http://gcc.gnu.org/onlinedocs/gcc/x86-Options.html
-		compile $abi "$NDK_ROOT/platforms/android-12/arch-x86" "$NDK_ROOT/toolchains/x86-4.9/prebuilt/$host-x86_64/bin" "i686-linux-android" "-march=i686"
+		compile $abi "$NDK_ROOT/platforms/android-23/arch-x86" "$NDK_ROOT/toolchains/x86-4.9/prebuilt/$host-x86_64/bin" "i686-linux-android" "-march=i686"
+		;;
+	x86_64)
+		compile $abi "$NDK_ROOT/platforms/android-23/arch-x86" "$NDK_ROOT/toolchains/x86-4.9/prebuilt/$host-x86_64/bin" "x86_64-linux-android" "-march=x86_64"
 		;;
 	arm64-v8a)
-		# https://gcc.gnu.org/onlinedocs/gcc/AArch64-Options.html#AArch64-Options
-		compile $abi "$NDK_ROOT/platforms/android-21/arch-arm64" "$NDK_ROOT/toolchains/aarch64-linux-android-4.9/prebuilt/$host-x86_64/bin" "aarch64-linux-android" "-march=armv8-a"
+		compile $abi "$NDK_ROOT/platforms/android-23/arch-arm64" "$NDK_ROOT/toolchains/aarch64-linux-android-4.9/prebuilt/$host-x86_64/bin" "aarch64-linux-android" "-march=armv8-a"
 		;;
 	*)
 		echo "Error APP_ABI"
