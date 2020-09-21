@@ -52,13 +52,19 @@ fi
 rm -rf $BUILD_PATH
 safeMakeDir $BUILD_PATH
 
+read -p "Press any key to build OpenSSL"
+
 ## Build OpenSSL static library (libssl.a & libcrypto.a)
-#$BASE_PATH/jni/compile-openssl.sh
-#checkExitCode $?
+$BASE_PATH/jni/compile-openssl.sh
+checkExitCode $?
+
+read -p "Press any key to build zlib"
 
 ## Build zlib static library (libz.a)
-#$BASE_PATH/jni/compile-zlib.sh
-#checkExitCode $?
+$BASE_PATH/jni/compile-zlib.sh
+checkExitCode $?
+
+read -p "Press any key to build cURL"
 
 ## Build cURL
 
@@ -90,24 +96,44 @@ compile() {
 	#export RANLIB=$TOOLCHAIN/bin/aarch64-linux-android-ranlib
 	#export STRIP=$TOOLCHAIN/bin/aarch64-linux-android-strip	
 	
+	echo "ABI: $ABI"
+	echo "TOOLCHAIN: $TOOLCHAIN"
+	echo "TARGET: $TARGET"
+
 	export SYSROOT="$SYSROOT"
 	export CFLAGS="$CFLAGS --sysroot=$SYSROOT"
 	export CPPFLAGS="-I$SYSROOT/usr/include --sysroot=$SYSROOT"
-	#export CC="$TOOLCHAIN/$TARGET-android29-clang"
-	#export CPP="$TOOLCHAIN/$TARGET-cpp"
-	#export CXX="$TOOLCHAIN/$TARGET-g++"
-	#export LD="$TOOLCHAIN/$TARGET-ld"
-	#export AS="$TOOLCHAIN/$TARGET-as"
-	#export AR="$TOOLCHAIN/$TARGET-ar"
-	#export NM="$TOOLCHAIN/$TARGET-nm"
+	export CC="$TOOLCHAIN/$TARGET-clang"
+	#export CPP="$TOOLCHAIN/$TARGET-clang++"
+	export CXX="$TOOLCHAIN/$TARGET-clang++"
+	export LD="$TOOLCHAIN/$TARGET-ld"
+	export AS="$TOOLCHAIN/$TARGET-as"
+	export AR="$TOOLCHAIN/$TARGET-ar"
+	export NM="$TOOLCHAIN/$TARGET-nm"
 	export STRIP="$TOOLCHAIN/$TARGET-strip"
 	export RANLIB="$TOOLCHAIN/$TARGET-ranlib"
 	export PKG_CONFIG_PATH="$BUILD_PATH/openssl/$ABI/lib/pkgconfig"
+	
+	echo "SYSROOT: $SYSROOT"
+	echo "CFLAGS: $CFLAGS"
+	echo "CPPFLAGS: $CPPFLAGS"
+	echo "CC: $CC"
+	echo "CPP: $CPP"
+	echo "CXX: $CXX"
+	echo "LD: $LD"
+	echo "AS: $AS"
+	echo "AR: $AR"
+	echo "NM: $NM"
+	echo "STRIP: $STRIP"
+	echo "RANLIB: $RANLIB"
+	echo "PKG_CONFIG_PATH: $PKG_CONFIG_PATH"
+
 	# config
-	./buildconf
+	autoreconf -fi
 	checkExitCode $?
 	safeMakeDir $BUILD_PATH/curl/$ABI
 	compatibleWithAndroid
+	
 	# https://stackoverflow.com/questions/12636536/install-curl-with-openssl
 	./configure --host=$TARGET \
 		--prefix=$BUILD_PATH/curl/$ABI \
@@ -120,36 +146,44 @@ compile() {
 		--enable-libgcc \
 		--enable-ipv6
 	checkExitCode $?
+
 	# clean
 	make clean
 	checkExitCode $?
+	
 	# make
 	make -j4
 	checkExitCode $?
+	
 	# install
 	make install
 	checkExitCode $?
+	
 	# extract *.o from libcurl.a
 	safeMakeDir $BASE_PATH/obj/$ABI/curl
 	cd $BASE_PATH/obj/$ABI/curl
 	$AR -x $BUILD_PATH/curl/$ABI/lib/libcurl.a
 	checkExitCode $?
+	
 	# extract *.o from libssl.a & libcrypto.a
 	safeMakeDir $BASE_PATH/obj/$ABI/openssl
 	cd $BASE_PATH/obj/$ABI/openssl
 	$AR -x $BUILD_PATH/openssl/$ABI/lib/libssl.a
 	$AR -x $BUILD_PATH/openssl/$ABI/lib/libcrypto.a
 	checkExitCode $?
+	
 	# extract *.o from libz.a
 	safeMakeDir $BASE_PATH/obj/$ABI/zlib
 	cd $BASE_PATH/obj/$ABI/zlib
 	$AR -x $BUILD_PATH/zlib/$ABI/lib/libz.a
 	checkExitCode $?
+	
 	# combine *.o to libcurl.a
 	safeMakeDir $BASE_PATH/libs/$ABI
 	cd $BASE_PATH
 	$AR -cr $BASE_PATH/libs/$ABI/libcurl.a $BASE_PATH/obj/$ABI/curl/*.o $BASE_PATH/obj/$ABI/openssl/*.o $BASE_PATH/obj/$ABI/zlib/*.o
 	checkExitCode $?
+	
 	# copy dylib
 	cp -f $BUILD_PATH/curl/$ABI/lib/libcurl.so $BASE_PATH/libs/$ABI/libcurl.so
 	checkExitCode $?
@@ -168,7 +202,7 @@ for abi in ${APP_ABI[*]}; do
 	case $abi in
 	armeabi-v7a)
 		# https://gcc.gnu.org/onlinedocs/gcc/ARM-Options.html#ARM-Options
-		compile $abi "$NDK_ROOT/platforms/android-23/arch-arm" "$NDK_ROOT/toolchains/arm-linux-androideabi-4.9/prebuilt/$host-x86_64/bin" "arm-linux-androideabi" "-march=armv7-a -mfloat-abi=softfp -mfpu=neon"
+		compile $abi "$NDK_ROOT/platforms/android-23/arch-arm" "$NDK_ROOT/toolchains/llvm/prebuilt/$host-x86_64/bin" "armv7a-linux-androideabi23" "-march=armv7-a -mfloat-abi=softfp -mfpu=neon"
 		;;
 	x86)
 		# http://gcc.gnu.org/onlinedocs/gcc/x86-Options.html
