@@ -15,7 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-APP_ABI=(armeabi-v7a x86 arm64-v8a)
+#APP_ABI=(armeabi-v7a x86 x86_64 arm64-v8a)
+
+APP_ABI=(armeabi-v7a)
 
 BASE_PATH=$(
 	cd "$(dirname $0)"
@@ -56,20 +58,21 @@ safeMakeDir $BUILD_PATH/openssl
 # http://doc.qt.io/qt-5/opensslsupport.html
 compile() {
 	cd $SSL_PATH
-	ABI=$1
-	SYSROOT=$2
-	TOOLCHAIN=$3
-	MACHINE=$4
-	SYSTEM=$5
-	ARCH=$6
-	CROSS_COMPILE=$7
+	CONFIG=$1
+	ABI=$2
+	SYSROOT=$3
+	TOOLCHAIN=$4
+	MACHINE=$5
+	SYSTEM=$6
+	ARCH=$7
+	CROSS_COMPILE=$8
 	# https://android.googlesource.com/platform/ndk/+/ics-mr0/docs/STANDALONE-TOOLCHAIN.html
 	export SYSROOT=$SYSROOT
 	export PATH="$TOOLCHAIN":"$PATH"
 	# OpenSSL Configure
 	export CROSS_COMPILE=$CROSS_COMPILE
 	export ANDROID_DEV=$SYSROOT/usr
-	export HOSTCC=gcc
+	#export HOSTCC=gcc
 	# Most of these should be OK (MACHINE, SYSTEM, ARCH).
 	export MACHINE=$MACHINE
 	export SYSTEM=$SYSTEM
@@ -77,14 +80,14 @@ compile() {
 	# config
 	safeMakeDir $BUILD_PATH/openssl/$ABI
 	checkExitCode $?
-	./Configure android no-shared --openssldir=$BUILD_PATH/openssl/$ABI
+	./Configure $CONFIG no-shared --openssldir=$BUILD_PATH/openssl/$ABI
 	checkExitCode $?
 	# clean
 	make clean
 	checkExitCode $?
 	# make
-	make -j4 depend
-	checkExitCode $?
+	#make -j4 depend
+	#checkExitCode $?
 	make -j4 all
 	checkExitCode $?
 	# install
@@ -105,13 +108,20 @@ fi
 for abi in ${APP_ABI[*]}; do
 	case $abi in
 	armeabi-v7a)
-		compile $abi "$NDK_ROOT/platforms/android-12/arch-arm" "$NDK_ROOT/toolchains/arm-linux-androideabi-4.9/prebuilt/$host-x86_64/bin" "armv7" "android" "arm" "arm-linux-androideabi-"
+	
+	android
+android-armv7 android-mips android-x86
+	
+		compile "android-armv7" $abi "$NDK_ROOT/platforms/android-23/arch-arm" "$NDK_ROOT/toolchains/arm-linux-androideabi-4.9/prebuilt/$host-x86_64/bin" "armv7" "android" "arm" "arm-linux-androideabi-"
 		;;
 	x86)
-		compile $abi "$NDK_ROOT/platforms/android-12/arch-x86" "$NDK_ROOT/toolchains/x86-4.9/prebuilt/$host-x86_64/bin" "i686" "android" "x86" "i686-linux-android-"
+		compile "android-x86" $abi "$NDK_ROOT/platforms/android-23/arch-x86" "$NDK_ROOT/toolchains/x86-4.9/prebuilt/$host-x86_64/bin" "i686" "android" "x86" "i686-linux-android-"
+		;;
+	x86_64)
+		compile "android-x86_64" $abi "$NDK_ROOT/platforms/android-23/arch-x86_64" "$NDK_ROOT/toolchains/x86-4.9/prebuilt/$host-x86_64/bin" "x86_64" "android" "x86_64" "x86_64-linux-android-"
 		;;
 	arm64-v8a)
-		compile $abi "$NDK_ROOT/platforms/android-21/arch-arm64" "$NDK_ROOT/toolchains/aarch64-linux-android-4.9/prebuilt/$host-x86_64/bin" "armv8" "android64" "arm" "aarch64-linux-android-"
+		compile "android-arm64" $abi "$NDK_ROOT/platforms/android-23/arch-arm64" "$NDK_ROOT/toolchains/aarch64-linux-android-4.9/prebuilt/$host-x86_64/bin" "armv8" "android64" "arm" "aarch64-linux-android-"
 		;;
 	*)
 		echo "Error APP_ABI"

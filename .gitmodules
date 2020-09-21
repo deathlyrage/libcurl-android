@@ -1,9 +1,12 @@
 [submodule "jni/curl"]
 	path = jni/curl
 	url = https://github.com/curl/curl.git
+	branch = master
 [submodule "jni/zlib"]
 	path = jni/zlib
 	url = https://github.com/madler/zlib.git
+	branch = master
 [submodule "jni/openssl"]
 	path = jni/openssl
 	url = https://github.com/openssl/openssl.git
+	branch = OpenSSL_1_1_1-stable
