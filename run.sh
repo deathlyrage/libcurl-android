@@ -16,6 +16,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # sudo apt install xutils-dev
+# sudo apt-get install libssl-dev
 
 NDK_ROOT="/home/deathlyrage/android-ndk-r21d"
 

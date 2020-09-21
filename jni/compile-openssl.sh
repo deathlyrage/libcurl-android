@@ -15,9 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#APP_ABI=(armeabi-v7a x86 x86_64 arm64-v8a)
-
-APP_ABI=(armeabi-v7a)
+APP_ABI=(armeabi-v7a x86 x86_64 arm64-v8a)
 
 BASE_PATH=$(
 	cd "$(dirname $0)"
@@ -82,20 +80,27 @@ compile() {
 	# config
 	safeMakeDir $BUILD_PATH/openssl/$ABI
 	checkExitCode $?
-	./Configure $CONFIG -D__ANDROID_API__=23 no-shared --openssldir=$BUILD_PATH/openssl/$ABI
 	
+	./Configure $CONFIG -D__ANDROID_API__=23 no-shared --openssldir=$BUILD_PATH/openssl/$ABI
 	checkExitCode $?
 	# clean
 	make clean
 	checkExitCode $?
+	
 	# make
-	#make -j4 depend
-	#checkExitCode $?
+	make -j4 depend
+	checkExitCode $?
+	
 	make -j4 all
 	checkExitCode $?
+	
+	mv libcrypto.a $BUILD_PATH/openssl/$ABI
+	mv libssl.a $BUILD_PATH/openssl/$ABI
+
 	# install
-	make install
-	checkExitCode $?
+	#make install
+	#checkExitCode $?
+	
 	cd $BASE_PATH
 }
 
