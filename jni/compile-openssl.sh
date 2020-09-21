@@ -41,6 +41,8 @@ safeMakeDir() {
 
 ## Android NDK
 export NDK_ROOT="$NDK_ROOT"
+export ANDROID_NDK_HOME="$NDK_ROOT"
+export PATH=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin:$ANDROID_NDK_HOME/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64/bin:$PATH
 
 if [ -z "$NDK_ROOT" ]; then
 	echo "Please set your NDK_ROOT environment variable first"
@@ -67,20 +69,21 @@ compile() {
 	ARCH=$7
 	CROSS_COMPILE=$8
 	# https://android.googlesource.com/platform/ndk/+/ics-mr0/docs/STANDALONE-TOOLCHAIN.html
-	export SYSROOT=$SYSROOT
-	export PATH="$TOOLCHAIN":"$PATH"
+	#export SYSROOT=$SYSROOT
+	#export PATH="$TOOLCHAIN":"$PATH"
 	# OpenSSL Configure
-	export CROSS_COMPILE=$CROSS_COMPILE
-	export ANDROID_DEV=$SYSROOT/usr
-	#export HOSTCC=gcc
+	#export CROSS_COMPILE=$CROSS_COMPILE
+	#export ANDROID_DEV=$SYSROOT/usr
+	#export HOSTCC=
 	# Most of these should be OK (MACHINE, SYSTEM, ARCH).
-	export MACHINE=$MACHINE
-	export SYSTEM=$SYSTEM
-	export ARCH=$ARCH
+	#export MACHINE=$MACHINE
+	#export SYSTEM=$SYSTEM
+	#export ARCH=$ARCH
 	# config
 	safeMakeDir $BUILD_PATH/openssl/$ABI
 	checkExitCode $?
-	./Configure $CONFIG no-shared --openssldir=$BUILD_PATH/openssl/$ABI
+	./Configure $CONFIG -D__ANDROID_API__=23 no-shared --openssldir=$BUILD_PATH/openssl/$ABI
+	
 	checkExitCode $?
 	# clean
 	make clean
@@ -108,11 +111,7 @@ fi
 for abi in ${APP_ABI[*]}; do
 	case $abi in
 	armeabi-v7a)
-	
-	android
-android-armv7 android-mips android-x86
-	
-		compile "android-armv7" $abi "$NDK_ROOT/platforms/android-23/arch-arm" "$NDK_ROOT/toolchains/arm-linux-androideabi-4.9/prebuilt/$host-x86_64/bin" "armv7" "android" "arm" "arm-linux-androideabi-"
+		compile "android-arm" $abi "$NDK_ROOT/platforms/android-23/arch-arm" "$NDK_ROOT/toolchains/arm-linux-androideabi-4.9/prebuilt/$host-x86_64/bin" "armv7" "android" "arm" "arm-linux-androideabi-"
 		;;
 	x86)
 		compile "android-x86" $abi "$NDK_ROOT/platforms/android-23/arch-x86" "$NDK_ROOT/toolchains/x86-4.9/prebuilt/$host-x86_64/bin" "i686" "android" "x86" "i686-linux-android-"
