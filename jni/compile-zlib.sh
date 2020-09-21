@@ -80,7 +80,7 @@ compile() {
 	
 	# config
 	safeMakeDir $BUILD_PATH/zlib/$ABI
-	compatibleWithAndroid
+	#compatibleWithAndroid
 	./configure --prefix=$BUILD_PATH/zlib/$ABI
 	checkExitCode $?
 	

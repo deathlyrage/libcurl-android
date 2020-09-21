@@ -52,11 +52,11 @@ fi
 rm -rf $BUILD_PATH
 safeMakeDir $BUILD_PATH
 
-read -p "Press any key to build OpenSSL"
+#read -p "Press any key to build OpenSSL"
 
 ## Build OpenSSL static library (libssl.a & libcrypto.a)
-$BASE_PATH/jni/compile-openssl.sh
-checkExitCode $?
+#$BASE_PATH/jni/compile-openssl.sh
+#checkExitCode $?
 
 read -p "Press any key to build zlib"
 
